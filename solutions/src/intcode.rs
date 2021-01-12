@@ -7,10 +7,19 @@ pub fn parse_input(input: &Vec<String>) -> Vec<i32> {
     ints.clone()
 }
 
-pub fn run_intcode(ints: &Vec<i32>, arg: i32) -> (Vec<i32>, Vec<i32>) {
+#[derive(Debug)]
+#[derive(PartialEq)]
+pub enum ExitCode {
+    FINISHED,
+    WAITING,
+}
+
+pub fn run_intcode(ints: &Vec<i32>, args: &Vec<i32>) -> (Vec<i32>, Vec<i32>, ExitCode) {
     let mut program = ints.clone();
     let mut outputs = vec![];
     let mut instruction_pointer = 0;
+    let mut args_copy = args.clone();
+    let mut arg_iter = args_copy.drain(..);
 
     while instruction_pointer < program.len() {
         let (opcode, modes) = parse_instruction(program[instruction_pointer]);
@@ -18,7 +27,7 @@ pub fn run_intcode(ints: &Vec<i32>, arg: i32) -> (Vec<i32>, Vec<i32>) {
         instruction_pointer = match opcode {
             1 => add(instruction_pointer, &mut program, &modes),
             2 => mult(instruction_pointer, &mut program, &modes),
-            3 => input(instruction_pointer, &mut program, arg),
+            3 => input(instruction_pointer, &mut program, arg_iter.next()),
             4 => output(instruction_pointer, &mut program, &mut outputs),
             5 => jump_if_true(instruction_pointer, &mut program, &modes),
             6 => jump_if_false(instruction_pointer, &mut program, &modes),
@@ -29,7 +38,11 @@ pub fn run_intcode(ints: &Vec<i32>, arg: i32) -> (Vec<i32>, Vec<i32>) {
         };
     }
 
-    (program, outputs)
+    if instruction_pointer <= program.len() {
+        (program, outputs, ExitCode::FINISHED)
+    } else {
+        (program, outputs, ExitCode::WAITING)
+    }
 }
 
 fn parse_instruction(instruction: i32) -> (i32, Vec<i32>) {
@@ -65,10 +78,18 @@ fn mult(i: usize, program: &mut Vec<i32>, modes: &Vec<i32>) -> usize {
     i + 4
 }
 
-fn input(i: usize, program: &mut Vec<i32>, arg: i32) -> usize {
-    let position = program[i+1];
-    program[position as usize] = arg;
-    i + 2
+fn input(i: usize, program: &mut Vec<i32>, arg_maybe: Option<i32>) -> usize {
+    match arg_maybe {
+        Some(arg) => {
+            let position = program[i+1];
+            program[position as usize] = arg;
+            i + 2
+        },
+        None => {
+            // We want the program to exit as-is
+            i + program.len()
+        },
+    }
 }
 
 fn output(i: usize, program: &mut Vec<i32>, outputs: &mut Vec<i32>) -> usize {
