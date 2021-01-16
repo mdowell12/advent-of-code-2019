@@ -7,6 +7,12 @@ use crate::intcode::parse_input;
 use crate::intcode::run_intcode;
 use crate::util::read_inputs;
 
+#[derive(Debug)]
+struct Amplifier {
+    program: Vec<i32>,
+    position: usize,
+}
+
 fn run_1(input: &Vec<String>) -> i32 {
     let program = parse_input(input);
     let phase_permutations = (0..5).permutations(5);
@@ -17,7 +23,7 @@ fn run_1(input: &Vec<String>) -> i32 {
 
         let mut next_input = 0;
         for phase in phases {
-            let (_, output, _) = run_intcode(&program, &vec![phase, next_input]);
+            let (_, output, _, _) = run_intcode(&program, &vec![phase, next_input], 0);
             next_input = output[0];
         }
         if next_input > max_output {
@@ -35,33 +41,40 @@ fn run_2(input: &Vec<String>) -> i32 {
     let mut max_output = 0;
 
     for phases in phase_permutations {
-        // let phases = vec![9,8,7,6,5];
 
-        let mut amplifiers: HashMap<usize, Vec<i32>> = HashMap::new();
-        amplifiers.insert(0, program.clone());
-        amplifiers.insert(1, program.clone());
-        amplifiers.insert(2, program.clone());
-        amplifiers.insert(3, program.clone());
-        amplifiers.insert(4, program.clone());
+        // Initialize amplifier computers
+        let mut amplifiers: HashMap<usize, Amplifier> = HashMap::new();
+        amplifiers.insert(0, Amplifier{ program: program.clone(), position: 0 });
+        amplifiers.insert(1, Amplifier{ program: program.clone(), position: 0 });
+        amplifiers.insert(2, Amplifier{ program: program.clone(), position: 0 });
+        amplifiers.insert(3, Amplifier{ program: program.clone(), position: 0 });
+        amplifiers.insert(4, Amplifier{ program: program.clone(), position: 0 });
 
         let mut next_input = 0;
         let mut i = 0;
         loop {
-            let amplifier = i % phases.len();
-            let phase = phases[amplifier];
-            let amplifier_program = amplifiers.get(&amplifier).unwrap();
+            let amplifier_id = i % phases.len();
+            let amplifier = amplifiers.get(&amplifier_id).unwrap();
 
-            let (next_program, output, exit_code) = run_intcode(&amplifier_program, &vec![phase, next_input]);
-            println!("{:?} {:?} {:?} {:?}", i, phase, output, next_input);
+            let prog_inputs;
+            if i < 5 {
+                prog_inputs = vec![phases[amplifier_id], next_input];
+            } else {
+                prog_inputs = vec![next_input];
+            }
+
+            // println!("STARTED i={:?} amp={} pos={} inputs={:?}", i, amplifier_id, amplifier.position, prog_inputs);
+            let (next_program, output, position, exit_code) = run_intcode(&amplifier.program, &prog_inputs, amplifier.position);
+            // println!("EXITED i={:?} amp={} pos={} inputs={:?} output={:?} next_input={:?} exit_code={:?}", i, amplifier_id, position, prog_inputs, output, next_input, exit_code);
 
             next_input = output[0];
 
-            if (exit_code == ExitCode::FINISHED) & (amplifier == 4) {
+            if (exit_code == ExitCode::FINISHED) & (amplifier_id == 4) {
                 // Is final amplifier and has exited
                 break;
             }
 
-            amplifiers.insert(amplifier, next_program);
+            amplifiers.insert(amplifier_id, Amplifier{ program: next_program, position});
             i += 1;
         }
 
