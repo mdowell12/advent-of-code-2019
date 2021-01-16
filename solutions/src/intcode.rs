@@ -9,15 +9,36 @@ pub fn parse_input(input: &Vec<String>) -> Vec<i32> {
 
 #[derive(Debug)]
 #[derive(PartialEq)]
-pub enum ExitCode {
-    FINISHED,
-    WAITING,
+#[derive(Clone)]
+pub struct IntCode {
+    pub status: Status,
+    pub position: usize,
+    pub program: Vec<i32>,
 }
 
-pub fn run_intcode(ints: &Vec<i32>, args: &Vec<i32>, start_position: usize) -> (Vec<i32>, Vec<i32>, usize, ExitCode) {
-    let mut program = ints.clone();
+impl Default for IntCode {
+    fn default() -> IntCode {
+        IntCode {
+            status: Status::STARTING,
+            position: 0,
+            program: vec![],
+        }
+    }
+}
+
+#[derive(Debug)]
+#[derive(PartialEq)]
+#[derive(Copy, Clone)]
+pub enum Status {
+    STARTING,
+    WAITING,
+    FINISHED,
+}
+
+pub fn run_intcode(intcode: IntCode, args: &Vec<i32>) -> (IntCode, Vec<i32>) {
+    let mut program = intcode.program.clone();
     let mut outputs = vec![];
-    let mut instruction_pointer = start_position;
+    let mut instruction_pointer = intcode.position;
     let mut args_copy = args.clone();
     let mut arg_iter = args_copy.drain(..);
 
@@ -34,7 +55,14 @@ pub fn run_intcode(ints: &Vec<i32>, args: &Vec<i32>, start_position: usize) -> (
                     },
                     None => {
                         // We want the program to exit as-is
-                        return (program, outputs, instruction_pointer, ExitCode::WAITING);
+                        return (
+                            IntCode {
+                                position: instruction_pointer,
+                                program,
+                                status: Status::WAITING
+                            },
+                            outputs
+                        )
                     },
                 }
             },
@@ -43,7 +71,14 @@ pub fn run_intcode(ints: &Vec<i32>, args: &Vec<i32>, start_position: usize) -> (
             6 => jump_if_false(instruction_pointer, &mut program, &modes),
             7 => less_than(instruction_pointer, &mut program, &modes),
             8 => equals(instruction_pointer, &mut program, &modes),
-            99 => return (program, outputs, instruction_pointer, ExitCode::FINISHED),
+            99 => return {(
+                IntCode {
+                    position: instruction_pointer,
+                    program,
+                    status: Status::FINISHED
+                },
+                outputs
+            )},
             _ => panic!(format!("Invalid opcode {:?}", opcode))
         };
     }
