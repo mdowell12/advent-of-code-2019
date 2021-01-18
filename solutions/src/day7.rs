@@ -9,11 +9,11 @@ use crate::util::read_inputs;
 
 #[derive(Debug)]
 struct Amplifier {
-    program: Vec<i32>,
+    program: Vec<i64>,
     position: usize,
 }
 
-fn run_1(input: &Vec<String>) -> i32 {
+fn run_1(input: &Vec<String>) -> i64 {
     let program = parse_input(input);
     let phase_permutations = (0..5).permutations(5);
 
@@ -34,7 +34,7 @@ fn run_1(input: &Vec<String>) -> i32 {
     max_output
 }
 
-fn run_2(input: &Vec<String>) -> i32 {
+fn run_2(input: &Vec<String>) -> i64 {
     let program = parse_input(input);
     let phase_permutations = (5..10).permutations(5);
 

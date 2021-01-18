@@ -4,13 +4,13 @@ use crate::intcode::parse_input;
 use crate::intcode::run_intcode;
 use crate::util::read_inputs;
 
-fn run_1(input: &Vec<String>) -> i32 {
+fn run_1(input: &Vec<String>) -> i64 {
     let program = parse_input(input);
     let (_, outputs, _, _) = run_intcode(&program, &vec![1], 0);
     *outputs.last().unwrap()
 }
 
-fn run_2(input: &Vec<String>) -> i32 {
+fn run_2(input: &Vec<String>) -> i64 {
     let program = parse_input(input);
     let (_, outputs, _, _) = run_intcode(&program, &vec![5], 0);
     *outputs.last().unwrap()

@@ -3,7 +3,7 @@ use crate::intcode::parse_input;
 use crate::intcode::run_intcode;
 use crate::util::read_inputs;
 
-fn run_1(input: &Vec<String>) -> i32 {
+fn run_1(input: &Vec<String>) -> i64 {
     let mut ints = parse_input(input);
     ints[1] = 12;
     ints[2] = 2;
@@ -11,10 +11,10 @@ fn run_1(input: &Vec<String>) -> i32 {
     output_program[0]
 }
 
-fn run_2(input: &Vec<String>) -> i32 {
-    let ints: Vec<i32> = input[0]
+fn run_2(input: &Vec<String>) -> i64 {
+    let ints: Vec<i64> = input[0]
         .split(",")
-        .map(|s| s.parse::<i32>().unwrap())
+        .map(|s| s.parse::<i64>().unwrap())
         .collect()
         ;
     for noun in 0..99 {
